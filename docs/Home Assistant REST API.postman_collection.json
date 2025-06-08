@@ -1,0 +1,765 @@
+{
+	"info": {
+		"_postman_id": "d742c87a-781d-4c48-b284-5e2cbf471b0c",
+		"name": "Home Assistant REST API",
+		"description": "Postman collection for Home Assistant REST API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30368910"
+	},
+	"item": [
+		{
+			"name": "GET /api/ - Check API",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/config",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/config",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/events",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/events",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"events"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/services",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/services",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"services"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/history/period/:timestamp",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/history/period/{{timestamp}}?filter_entity_id={{filter_ids}}&minimal_response={{minimal_resp}}&end_time={{end}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"history",
+						"period",
+						"{{timestamp}}"
+					],
+					"query": [
+						{
+							"key": "filter_entity_id",
+							"value": "{{filter_ids}}"
+						},
+						{
+							"key": "minimal_response",
+							"value": "{{minimal_resp}}"
+						},
+						{
+							"key": "end_time",
+							"value": "{{end}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/logbook/:timestamp",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/logbook/{{timestamp}}?entity={{entity_id}}&end_time={{end}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"logbook",
+						"{{timestamp}}"
+					],
+					"query": [
+						{
+							"key": "entity",
+							"value": "{{entity_id}}"
+						},
+						{
+							"key": "end_time",
+							"value": "{{end}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/states",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/states",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"states"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/states/:entity_id",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/states/{{entity_id}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"states",
+						"{{entity_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/error_log",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/error_log",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"error_log"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/camera_proxy/:camera_id",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/camera_proxy/{{camera_id}}?time={{time}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"camera_proxy",
+						"{{camera_id}}"
+					],
+					"query": [
+						{
+							"key": "time",
+							"value": "{{time}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/calendars",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/calendars",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"calendars"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /api/calendars/:calendar_id",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/calendars/{{calendar_id}}?start={{start}}&end={{end}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"calendars",
+						"{{calendar_id}}"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "{{start}}"
+						},
+						{
+							"key": "end",
+							"value": "{{end}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/states/:entity_id",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "// { \"state\": \"{{state_val}}\", \"attributes\": { \"unit_of_measurement\": \"°C\" } }"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/states/{{entity_id}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"states",
+						"{{entity_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/events/:event_type",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{{event_data}}"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/events/{{event_type}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"events",
+						"{{event_type}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/services/:domain/:service",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"entity_id\": \"{{entity_id}}\" }"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/services/{{domain}}/{{service}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"services",
+						"{{domain}}",
+						"{{service}}"
+					],
+					"query": [
+						{
+							"key": "return_response",
+							"value": "{{return_resp}}",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/template",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \"template\": \"{{template}}\" }"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/template",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"template"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/config/core/check_config",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/config/core/check_config",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"config",
+						"core",
+						"check_config"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /api/intent/handle",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"name\":\"{{intent_name}}\",\"data\":{{intent_data}}}"
+				},
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/intent/handle",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"intent",
+						"handle"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE /api/states/:entity_id",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/states/{{entity_id}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{hostname}}"
+					],
+					"port": "{{port}}",
+					"path": [
+						"api",
+						"states",
+						"{{entity_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "protocol",
+			"value": "http"
+		},
+		{
+			"key": "hostname",
+			"value": "192.168.1.155"
+		},
+		{
+			"key": "port",
+			"value": "8123"
+		},
+		{
+			"key": "token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiI4YzhjMTUwMjUxN2U0MjE3YWViYTQ0OGUwODg4N2ZhZCIsImlhdCI6MTc0NTc1OTIxNywiZXhwIjoyMDYxMTE5MjE3fQ.IP2RKF5Wptl8Aqxub7p4htpQav-XtOIWzjN_zOmkzpk"
+		},
+		{
+			"key": "timestamp",
+			"value": "2025-04-27T00:00:00+02:00"
+		},
+		{
+			"key": "entity_id",
+			"value": "sensor.wii_fi_temperature_humidity_sensor_temperature"
+		},
+		{
+			"key": "event_type",
+			"value": "state_changed"
+		},
+		{
+			"key": "domain",
+			"value": "light"
+		},
+		{
+			"key": "service",
+			"value": "turn_on"
+		},
+		{
+			"key": "calendar_id",
+			"value": "calendar.holidays"
+		},
+		{
+			"key": "start",
+			"value": "2025-04-01T00:00:00Z"
+		},
+		{
+			"key": "end",
+			"value": "2025-04-30T23:59:59Z"
+		},
+		{
+			"key": "camera_id",
+			"value": "camera.my_camera"
+		},
+		{
+			"key": "time",
+			"value": "0"
+		},
+		{
+			"key": "filter_ids",
+			"value": "sensor.wii_fi_temperature_humidity_sensor_temperature"
+		},
+		{
+			"key": "return_resp",
+			"value": "false"
+		},
+		{
+			"key": "minimal_resp",
+			"value": "false"
+		},
+		{
+			"key": "state_val",
+			"value": "25"
+		},
+		{
+			"key": "event_data",
+			"value": "{}"
+		},
+		{
+			"key": "template",
+			"value": "It is {{ now() }}"
+		},
+		{
+			"key": "intent_name",
+			"value": "SetTimer"
+		},
+		{
+			"key": "intent_data",
+			"value": "{\"seconds\": \"30\"}"
+		}
+	]
+}

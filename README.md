@@ -13,6 +13,7 @@ A comprehensive plant monitoring system built with ESP32 that measures soil mois
 - 💡 **LED status indicators** during data collection
 - 🕒 **System uptime** tracking and display
 - 📡 **Static IP configuration** for reliable network access
+- 🏠 **Home Assistant integration** via REST API for smart home automation
 
 ## Hardware Requirements
 
@@ -89,6 +90,28 @@ const int SOIL_SENSOR_WET_VALUE = 1700;   // ADC reading in water
 const int SOIL_SENSOR_DRY_VALUE = 3400;   // ADC reading in dry air
 ```
 
+### Home Assistant Configuration
+
+Configure your Home Assistant credentials before uploading:
+
+```cpp
+// Home Assistant configuration - Infrastructure layer
+const char* HA_URL = "http://192.168.1.155:8123/api/states/";
+const char* HA_TOKEN = "your_long_lived_access_token";
+
+// Home Assistant entity IDs - Domain entities
+const char* ENTITY_SOIL = "sensor.esp32_soil_moisture";
+const char* ENTITY_TEMP = "sensor.esp32_temperature";
+const char* ENTITY_HUM = "sensor.esp32_humidity";
+```
+
+**To create a Home Assistant Long-Lived Access Token:**
+
+1. In Home Assistant, go to Profile → Security → Long-Lived Access Tokens
+2. Click "Create Token" and give it a name (e.g., "ESP32 Sensors")
+3. Copy the generated token and paste it in `HA_TOKEN`
+4. Update `HA_URL` with your Home Assistant IP address
+
 ### OTA Configuration
 
 Set your OTA password for secure firmware updates:
@@ -131,6 +154,84 @@ The web server provides these endpoints:
 
 - `GET /` - Main dashboard with current readings and charts
 - `GET /404` - Custom 404 error page for invalid routes
+
+## Home Assistant Integration
+
+The ESP32 automatically sends sensor data to Home Assistant every time new median values are calculated (every 60 seconds). The integration follows clean architecture principles with proper error handling and WiFi reconnection.
+
+### Sensor Entities Created
+
+When the ESP32 starts sending data, these entities will appear in Home Assistant:
+
+- **`sensor.esp32_soil_moisture`** - Soil moisture percentage (0-100%)
+- **`sensor.esp32_temperature`** - Temperature in Celsius
+- **`sensor.esp32_humidity`** - Relative humidity percentage
+
+### Home Assistant Configuration
+
+Add these to your `configuration.yaml` to properly configure the sensors:
+
+```yaml
+# ESP32 Soil Moisture Sensors
+sensor:
+  - platform: template
+    sensors:
+      esp32_soil_moisture:
+        friendly_name: "ESP32 Soil Moisture"
+        unit_of_measurement: "%"
+        device_class: moisture
+        value_template: "{{ states('sensor.esp32_soil_moisture') }}"
+
+      esp32_temperature:
+        friendly_name: "ESP32 Temperature"
+        unit_of_measurement: "°C"
+        device_class: temperature
+        value_template: "{{ states('sensor.esp32_temperature') }}"
+
+      esp32_humidity:
+        friendly_name: "ESP32 Humidity"
+        unit_of_measurement: "%"
+        device_class: humidity
+        value_template: "{{ states('sensor.esp32_humidity') }}"
+```
+
+### Automation Examples
+
+Create useful automations with your sensor data:
+
+```yaml
+# Low soil moisture alert
+automation:
+  - alias: "Plant Needs Water"
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.esp32_soil_moisture
+      below: 30
+    action:
+      service: notify.mobile_app_your_phone
+      data:
+        message: "🌱 Plant soil moisture is low ({{ states('sensor.esp32_soil_moisture') }}%). Time to water!"
+
+  # High temperature warning
+  - alias: "Plant Temperature Warning"
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.esp32_temperature
+      above: 30
+    action:
+      service: notify.mobile_app_your_phone
+      data:
+        message: "🌡️ Plant temperature is high ({{ states('sensor.esp32_temperature') }}°C). Consider moving to shade."
+```
+
+### Integration Features
+
+- **Automatic data transmission** every 60 seconds
+- **WiFi reconnection** with automatic retry logic
+- **Error handling** with detailed logging to serial monitor
+- **Visual indicators** on ESP32 web dashboard showing connection status
+- **Standard JSON format** compatible with Home Assistant REST API
+- **Device classes** for proper sensor categorization in Home Assistant
 
 ## Architecture & Design Principles
 
@@ -235,6 +336,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## Future Enhancements
 
+- [x] **Home Assistant integration** via REST API ✅ _Completed_
 - [ ] MQTT integration for IoT platforms
 - [ ] Multiple sensor support (sensor array)
 - [ ] Data logging to SD card
