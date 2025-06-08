@@ -163,7 +163,7 @@ The ESP32 automatically sends sensor data to Home Assistant every time new media
 
 When the ESP32 starts sending data, these entities will appear in Home Assistant:
 
-- **`sensor.esp32_soil_moisture`** - Soil moisture percentage (0-100%)
+- **`sensor.esp32_soil_moisture`** - Raw ADC soil moisture value (1700-3400 range)
 - **`sensor.esp32_temperature`** - Temperature in Celsius
 - **`sensor.esp32_humidity`** - Relative humidity percentage
 
@@ -178,8 +178,8 @@ sensor:
     sensors:
       esp32_soil_moisture:
         friendly_name: "ESP32 Soil Moisture"
-        unit_of_measurement: "%"
-        device_class: moisture
+        unit_of_measurement: "ADC"
+        device_class: ""
         value_template: "{{ states('sensor.esp32_soil_moisture') }}"
 
       esp32_temperature:
@@ -193,6 +193,21 @@ sensor:
         unit_of_measurement: "%"
         device_class: humidity
         value_template: "{{ states('sensor.esp32_humidity') }}"
+
+      # Optional: Convert raw ADC to percentage for easier automation
+      esp32_soil_moisture_percent:
+        friendly_name: "ESP32 Soil Moisture %"
+        unit_of_measurement: "%"
+        device_class: moisture
+        value_template: >
+          {% set raw_adc = states('sensor.esp32_soil_moisture') | float %}
+          {% set wet_value = 1700 %}
+          {% set dry_value = 3400 %}
+          {% if raw_adc > 0 %}
+            {{ ((dry_value - raw_adc) / (dry_value - wet_value) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
 ```
 
 ### Automation Examples
@@ -200,17 +215,28 @@ sensor:
 Create useful automations with your sensor data:
 
 ```yaml
-# Low soil moisture alert
+# Low soil moisture alert (using raw ADC values)
 automation:
   - alias: "Plant Needs Water"
     trigger:
       platform: numeric_state
       entity_id: sensor.esp32_soil_moisture
+      above: 3000 # Higher ADC values = drier soil
+    action:
+      service: notify.mobile_app_your_phone
+      data:
+        message: "🌱 Plant soil moisture is low (ADC: {{ states('sensor.esp32_soil_moisture') }}). Time to water!"
+
+  # Alternative: Using the percentage conversion template sensor
+  - alias: "Plant Needs Water (Percentage)"
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.esp32_soil_moisture_percent
       below: 30
     action:
       service: notify.mobile_app_your_phone
       data:
-        message: "🌱 Plant soil moisture is low ({{ states('sensor.esp32_soil_moisture') }}%). Time to water!"
+        message: "🌱 Plant soil moisture is low ({{ states('sensor.esp32_soil_moisture_percent') }}%). Time to water!"
 
   # High temperature warning
   - alias: "Plant Temperature Warning"

@@ -110,7 +110,8 @@ int convertSoilMoistureToPercent(float rawValue) {
 String getDeviceClass(const String& unit) {
   // Device classes help Home Assistant display sensors properly
   if (unit == "°C") return "temperature";
-  if (unit == "%") return "humidity"; // Used for both humidity and soil moisture
+  if (unit == "%") return "humidity"; // Used for humidity percentage
+  if (unit == "ADC") return "moisture"; // Raw ADC values for soil moisture sensors
   return ""; // Default - no device class
 }
 
@@ -166,11 +167,11 @@ void updateHomeAssistant() {
   
   Serial.println("Sending sensor data to Home Assistant...");
   
-  // Convert soil moisture ADC value to percentage for Home Assistant
-  int soilMoistPercent = convertSoilMoistureToPercent(medianSoilMoist);
+  // Send raw ADC value for soil moisture (not percentage)
+  // This allows Home Assistant to handle raw sensor data and apply its own calibration
   
   // Update all three sensors
-  bool soilSuccess = sendToHomeAssistant(ENTITY_SOIL, soilMoistPercent, "%", "ESP32 Soil Moisture");
+  bool soilSuccess = sendToHomeAssistant(ENTITY_SOIL, medianSoilMoist, "ADC", "ESP32 Soil Moisture");
   bool tempSuccess = sendToHomeAssistant(ENTITY_TEMP, medianTemp, "°C", "ESP32 Temperature");
   bool humSuccess = sendToHomeAssistant(ENTITY_HUM, medianHum, "%", "ESP32 Humidity");
   

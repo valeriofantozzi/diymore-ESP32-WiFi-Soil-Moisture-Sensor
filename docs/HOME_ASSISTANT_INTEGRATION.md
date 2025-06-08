@@ -66,11 +66,11 @@ Content-Type: application/json
 
 ```json
 {
-  "state": "25.5",
+  "state": "2850",
   "attributes": {
-    "unit_of_measurement": "°C",
-    "friendly_name": "ESP32 Temperature",
-    "device_class": "temperature",
+    "unit_of_measurement": "ADC",
+    "friendly_name": "ESP32 Soil Moisture",
+    "device_class": "moisture",
     "state_class": "measurement"
   }
 }
@@ -78,7 +78,7 @@ Content-Type: application/json
 
 ### Entities Created
 
-- `sensor.esp32_soil_moisture` - Soil moisture percentage (0-100%)
+- `sensor.esp32_soil_moisture` - Raw ADC soil moisture value (1700-3400 range)
 - `sensor.esp32_temperature` - Temperature in Celsius
 - `sensor.esp32_humidity` - Relative humidity percentage
 
@@ -92,7 +92,7 @@ sensor:
     sensors:
       esp32_soil_moisture:
         friendly_name: "ESP32 Soil Moisture"
-        unit_of_measurement: "%"
+        unit_of_measurement: "ADC"
         device_class: moisture
         value_template: "{{ states('sensor.esp32_soil_moisture') }}"
 
@@ -107,6 +107,21 @@ sensor:
         unit_of_measurement: "%"
         device_class: humidity
         value_template: "{{ states('sensor.esp32_humidity') }}"
+
+      # Optional: Convert raw ADC to percentage for easier automation
+      esp32_soil_moisture_percent:
+        friendly_name: "ESP32 Soil Moisture %"
+        unit_of_measurement: "%"
+        device_class: moisture
+        value_template: >
+          {% set raw_adc = states('sensor.esp32_soil_moisture') | float %}
+          {% set wet_value = 1700 %}
+          {% set dry_value = 3400 %}
+          {% if raw_adc > 0 %}
+            {{ ((dry_value - raw_adc) / (dry_value - wet_value) * 100) | round(1) }}
+          {% else %}
+            0
+          {% endif %}
 ```
 
 ## Code Changes Summary

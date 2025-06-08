@@ -417,7 +417,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "// { \"state\": \"{{state_val}}\", \"attributes\": { \"unit_of_measurement\": \"°C\" } }"
+					"raw": "{\n  \"state\": \"2850\",\n  \"attributes\": {\n    \"unit_of_measurement\": \"ADC\",\n    \"friendly_name\": \"ESP32 Soil Moisture\",\n    \"device_class\": \"moisture\",\n    \"state_class\": \"measurement\"\n  }\n}"
 				},
 				"url": {
 					"raw": "{{protocol}}://{{hostname}}:{{port}}/api/states/{{entity_id}}",
