@@ -3,15 +3,25 @@
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
 #include <HTTPClient.h> // Required for Home Assistant API communication
+#include "esp_sleep.h" // Deep sleep functionality for power management
+#include "esp_system.h" // Reset reason detection for manual reset OTA trigger
 
 // Sampling configuration constants
-const unsigned long SAMPLING_INTERVAL_MS = 60000; // 1 minute between sample collections
+const unsigned long SAMPLING_INTERVAL_MS = 60 * 1000; // 60 seconds between sample collections
 const int SAMPLES_COUNT = 10; // Number of samples to collect for each measurement
 const unsigned long SAMPLE_DELAY_MS = 100; // Delay between individual samples (1 second total sampling time)
 
-// Soil moisture sensor calibration constants - SRP principle
-const int SOIL_SENSOR_WET_VALUE = 1700;   // ADC reading in water (100% moisture)
-const int SOIL_SENSOR_DRY_VALUE = 3400;   // ADC reading in dry air (0% moisture)
+// Deep sleep configuration constants - power management
+const uint64_t DEEP_SLEEP_DURATION_US = 1 * 60 * 1000000ULL; // 60 seconds sleep duration in microseconds
+const uint32_t OTA_WINDOW_DURATION_MS = 5 * 60 * 1000; // 5 minutes (300 seconds) to wait for OTA after manual reset
+
+// OTA mode state tracking - persists across function calls
+bool otaMode = false;
+unsigned long otaStartTime = 0;
+
+// // Soil moisture sensor calibration constants - SRP principle
+// const int SOIL_SENSOR_WET_VALUE = 1700;   // ADC reading in water (100% moisture)
+// const int SOIL_SENSOR_DRY_VALUE = 3400;   // ADC reading in dry air (0% moisture)
 
 // Network configuration
 const char* ssid = "Vodafone-C02290188";
@@ -81,11 +91,142 @@ float calculateMedian(float samples[], int count) {
   }
 }
 
-// Convert raw ADC to moisture percentage - single responsibility
-int convertSoilMoistureToPercent(float rawValue) {
-  // Invert scale because higher ADC values indicate drier soil
-  return map(constrain(rawValue, SOIL_SENSOR_WET_VALUE, SOIL_SENSOR_DRY_VALUE), 
-             SOIL_SENSOR_WET_VALUE, SOIL_SENSOR_DRY_VALUE, 100, 0);
+// // Convert raw ADC to moisture percentage - single responsibility
+// int convertSoilMoistureToPercent(float rawValue) {
+//   // Invert scale because higher ADC values indicate drier soil
+//   return map(constrain(rawValue, SOIL_SENSOR_WET_VALUE, SOIL_SENSOR_DRY_VALUE), 
+//              SOIL_SENSOR_WET_VALUE, SOIL_SENSOR_DRY_VALUE, 100, 0);
+// }
+
+// Print wake-up reason for debugging - single responsibility for diagnostics
+void printWakeupReason() {
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  
+  Serial.print("Wake-up reason: ");
+  switch(wakeup_reason) {
+    case ESP_SLEEP_WAKEUP_EXT0:
+      Serial.println("External signal using RTC_IO");
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1:
+      Serial.println("External signal using RTC controller");
+      break;
+    case ESP_SLEEP_WAKEUP_TIMER:
+      Serial.println("Timer");
+      break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD:
+      Serial.println("Touchpad");
+      break;
+    case ESP_SLEEP_WAKEUP_ULP:
+      Serial.println("ULP program");
+      break;
+    default:
+      Serial.printf("Other/First boot: %d\n", wakeup_reason);
+      break;
+  }
+}
+
+// Check if manual reset triggered OTA mode - handles EN pin resets vs deep sleep wake-ups
+bool isManualResetOtaMode() {
+  esp_reset_reason_t reset_reason = esp_reset_reason();
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  
+  Serial.print("Reset reason: ");
+  switch(reset_reason) {
+    case ESP_RST_POWERON:
+      Serial.println("Power-on reset (EN pin or first boot)");
+      // Distinguish between manual reset via EN pin vs deep sleep wake-up
+      if (wakeup_reason == ESP_SLEEP_WAKEUP_UNDEFINED) {
+        // First boot or manual reset via EN pin - trigger OTA mode
+        Serial.println("Manual reset detected via EN pin - entering OTA mode");
+        return true;
+      } else {
+        // Wake-up from deep sleep - normal operation
+        Serial.println("Wake-up from deep sleep - normal operation");
+        return false;
+      }
+    case ESP_RST_EXT:
+      Serial.println("External reset (RST pin)");
+      return true; // Manual reset via RST pin also triggers OTA mode
+    case ESP_RST_SW:
+      Serial.println("Software reset");
+      return false;
+    case ESP_RST_PANIC:
+      Serial.println("Software reset due to exception/panic");
+      return false;
+    case ESP_RST_INT_WDT:
+      Serial.println("Reset due to interrupt watchdog");
+      return false;
+    case ESP_RST_TASK_WDT:
+      Serial.println("Reset due to task watchdog");
+      return false;
+    case ESP_RST_WDT:
+      Serial.println("Reset due to other watchdogs");
+      return false;
+    case ESP_RST_DEEPSLEEP:
+      Serial.println("Reset after exiting deep sleep mode");
+      return false; // Deep sleep wake-up - normal operation
+    case ESP_RST_BROWNOUT:
+      Serial.println("Brownout reset");
+      return false;
+    case ESP_RST_SDIO:
+      Serial.println("Reset over SDIO");
+      return false;
+    default:
+      Serial.printf("Unknown reset reason: %d\n", reset_reason);
+      return false;
+  }
+}
+
+// Prepare system for deep sleep - single responsibility for power management
+void prepareDeepSleep() {
+  Serial.println("Preparing for deep sleep...");
+  
+  // Disconnect WiFi to save power during sleep
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  
+  // Configure timer to wake up after specified duration
+  esp_sleep_enable_timer_wakeup(DEEP_SLEEP_DURATION_US);
+  
+  Serial.printf("Going to sleep for %llu seconds...\n", DEEP_SLEEP_DURATION_US / 1000000ULL);
+  
+  // Visual indicator before entering sleep
+  pulseLED(1, 300);
+  
+  // Ensure LED is off before sleep to save power
+  digitalWrite(led, HIGH); // HIGH = OFF for inverted logic
+  
+  // Enter deep sleep - execution stops here until wake-up
+  esp_deep_sleep_start();
+}
+
+// Connect to WiFi with timeout - single responsibility for network connection
+bool connectToWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi with static IP...");
+
+  unsigned long startAttemptTime = millis();
+  while (WiFi.status() != WL_CONNECTED && 
+         millis() - startAttemptTime < 20000) {
+    digitalWrite(led, !digitalRead(led)); // Toggle LED to show activity
+    delay(500);
+    Serial.print(".");
+  }
+  
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("");
+    Serial.print("Connected to ");
+    Serial.println(ssid);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+    pulseLED(1, 1000); // Visual confirmation of connection
+    return true;
+  } else {
+    Serial.println("\nFailed to connect to WiFi");
+    pulseLED(5, 200); // Visual indication of failure
+    return false;
+  }
 }
 
 // Helper function to get device class for Home Assistant entities - SRP principle
@@ -239,6 +380,15 @@ void setup(void) {
   
   // Short delay to allow stabilization when powering up
   delay(1000);
+    // Print wake-up reason for debugging power management
+  printWakeupReason();
+    // Check if manual reset triggered OTA mode
+  otaMode = isManualResetOtaMode();
+  
+  // If OTA mode is triggered, record start time for timeout
+  if (otaMode) {
+    otaStartTime = millis();
+  }
   
   // Visual indicator that initialization has started
   pulseLED(2, 200); // 2 quick blinks
@@ -250,49 +400,32 @@ void setup(void) {
     pulseLED(3, 200);
   }
   
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  Serial.println("");
-  Serial.println("Connecting to WiFi with static IP...");
-
-  // Wait for connection with timeout
-  unsigned long startAttemptTime = millis();
-  // Try for 20 seconds to connect to WiFi
-  while (WiFi.status() != WL_CONNECTED && 
-         millis() - startAttemptTime < 20000) {
-    digitalWrite(led, !digitalRead(led)); // Toggle LED to show activity
-    delay(500);
-    Serial.print(".");
-  }
+  // Connect to WiFi using the dedicated function
+  bool wifiConnected = connectToWiFi();
   
-  // Check if connected after timeout
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Failed to connect to WiFi");
-    // Visual indicator for WiFi failure - 5 quick blinks
-    pulseLED(5, 200);
-    // Continue anyway - device will work with limited functionality
-  } else {
-    Serial.println("");
-    Serial.print("Connected to ");
-    Serial.println(ssid);
-    Serial.print("Static IP address: ");
-    Serial.println(WiFi.localIP());
-    
-    // Visual indicator for successful connection - 1 long blink
-    pulseLED(1, 1000);
-    
-    // Initialize OTA after successful WiFi connection
-    initializeOTA();
-  }
-  // Continue with OTA initialization if WiFi is connected
-  if (WiFi.status() == WL_CONNECTED) {
-    // Initialize OTA after successful WiFi connection
-    initializeOTA();
-  }
-
+  // Initialize DHT sensor
   dht.begin();
-  
-  delay(2000);
+  delay(1000); // Allow sensor to stabilize
+    if (otaMode) {
+    Serial.println("OTA mode active - staying awake for firmware updates");
+    Serial.println("Sensor data collection is disabled during OTA window to avoid interference");
+    pulseLED(3, 500); // 3 longer pulses to indicate OTA mode
+    
+    // Initialize OTA if WiFi is connected
+    if (wifiConnected) {
+      initializeOTA();
+    }
+  } else {
+    Serial.println("Normal operation mode - will enter deep sleep after data collection");
+    
+    // Collect sensor data and send to Home Assistant
+    collectSensorSamples();
+    
+    // Enter deep sleep to save power
+    prepareDeepSleep();
+    
+    // Code after this point will not execute until next wake-up
+  }
 }
 
 // Helper function for diagnostic LED pulsing with fade effect - SRP principle
@@ -399,12 +532,58 @@ void initializeOTA() {
 }
 
 void loop(void) {
-  // Check if it's time to collect new samples
-  unsigned long currentTime = millis();
-  if (currentTime - lastSamplingTime >= SAMPLING_INTERVAL_MS) {
-    collectSensorSamples();
-    lastSamplingTime = currentTime;
+  if (otaMode) {
+    // Check if OTA window has expired (1 minute timeout)
+    if (millis() - otaStartTime > OTA_WINDOW_DURATION_MS) {
+      Serial.println("OTA window expired - switching to normal operation");
+      otaMode = false; // Disable OTA mode
+      
+      // Collect sensor data and enter deep sleep (avoid data collection during OTA window)
+      collectSensorSamples();
+      prepareDeepSleep();
+    }
+    
+    // In OTA mode, handle OTA updates
+    ArduinoOTA.handle();
+    
+    // Continuous non-blocking LED pulsing during OTA window for visual feedback
+    static unsigned long lastPulseUpdate = 0;
+    const int PULSE_PERIOD_MS = 2000; // 2 second complete pulse cycle (1s fade in + 1s fade out)
+    const int PULSE_UPDATE_INTERVAL_MS = 20; // Update LED every 20ms for smooth animation
+    
+    unsigned long currentTime = millis();
+    
+    // Update LED brightness every 20ms for smooth animation
+    if (currentTime - lastPulseUpdate >= PULSE_UPDATE_INTERVAL_MS) {
+      lastPulseUpdate = currentTime;
+      
+      // Calculate position in pulse cycle (0-PULSE_PERIOD_MS)
+      int cyclePosition = (currentTime - otaStartTime) % PULSE_PERIOD_MS;
+      int brightness;
+      
+      if (cyclePosition < PULSE_PERIOD_MS / 2) {
+        // First half: fade in (0 to 255)
+        brightness = map(cyclePosition, 0, PULSE_PERIOD_MS / 2 - 1, 0, 255);
+      } else {
+        // Second half: fade out (255 to 0)
+        brightness = map(cyclePosition - PULSE_PERIOD_MS / 2, 0, PULSE_PERIOD_MS / 2 - 1, 255, 0);
+      }
+      
+      // Apply brightness with inverted logic (LOW=ON for built-in LED)
+      analogWrite(led, 255 - brightness);
+    }
+    
+    // Print status every 10 seconds for user feedback
+    static unsigned long lastStatusPrint = 0;
+    if (currentTime - lastStatusPrint > 10000) {
+      uint32_t remainingMs = OTA_WINDOW_DURATION_MS - (currentTime - otaStartTime);
+      Serial.printf("OTA mode active - %lu seconds remaining\n", remainingMs / 1000);
+      lastStatusPrint = currentTime;
+    }
+  } else {
+    // We should not reach here in normal operation due to deep sleep
+    // If we do, go to sleep as a fallback safety measure
+    Serial.println("Unexpected wake state - going back to sleep");
+    prepareDeepSleep();
   }
-  
-  ArduinoOTA.handle();
 }
