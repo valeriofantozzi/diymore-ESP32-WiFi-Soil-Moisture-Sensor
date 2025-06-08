@@ -158,11 +158,11 @@ void updateHomeAssistant() {
   // Log overall status
   if (soilSuccess && tempSuccess && humSuccess) {
     Serial.println("All sensor data successfully sent to Home Assistant");
-      blinkLED(1, 500); // Blink once to indicate data sent
+      pulseLED(1, 500); // Blink once to indicate data sent
 
   } else {
     Serial.println("Some sensors failed to update in Home Assistant");
-      blinkLED(5, 250); // Blink five times to indicate failure
+      pulseLED(5, 250); // Blink five times to indicate failure
 
   }
 
@@ -241,13 +241,13 @@ void setup(void) {
   delay(1000);
   
   // Visual indicator that initialization has started
-  blinkLED(2, 200); // 2 quick blinks
+  pulseLED(2, 200); // 2 quick blinks
   
   // Configure static IP address before connecting to WiFi
   if (!WiFi.config(local_IP, gateway, subnet, primaryDNS, secondaryDNS)) {
     Serial.println("Failed to configure static IP");
     // Visual indicator for IP config failure - 3 short blinks
-    blinkLED(3, 200);
+    pulseLED(3, 200);
   }
   
   WiFi.mode(WIFI_STA);
@@ -269,7 +269,7 @@ void setup(void) {
   if (WiFi.status() != WL_CONNECTED) {
     Serial.println("Failed to connect to WiFi");
     // Visual indicator for WiFi failure - 5 quick blinks
-    blinkLED(5, 200);
+    pulseLED(5, 200);
     // Continue anyway - device will work with limited functionality
   } else {
     Serial.println("");
@@ -279,7 +279,7 @@ void setup(void) {
     Serial.println(WiFi.localIP());
     
     // Visual indicator for successful connection - 1 long blink
-    blinkLED(1, 1000);
+    pulseLED(1, 1000);
     
     // Initialize OTA after successful WiFi connection
     initializeOTA();
@@ -295,16 +295,32 @@ void setup(void) {
   delay(2000);
 }
 
-// Helper function for diagnostic LED blinking
-void blinkLED(int times, int delayMs) {
+// Helper function for diagnostic LED pulsing with fade effect - SRP principle
+void pulseLED(int times, int delayMs) {
+  const int FADE_STEPS = 50; // Number of steps for smooth fade transition
+  const int MAX_BRIGHTNESS = 255; // Maximum PWM value for LED brightness
+  
   for (int i = 0; i < times; i++) {
-    digitalWrite(led, LOW);
-    delay(delayMs);
-    digitalWrite(led, HIGH);
+    // Fade in: gradually increase brightness (decrease PWM value for inverted LED)
+    for (int brightness = 0; brightness <= MAX_BRIGHTNESS; brightness += (MAX_BRIGHTNESS / FADE_STEPS)) {
+      analogWrite(led, MAX_BRIGHTNESS - brightness); // Invert for LOW=ON logic
+      delay(delayMs / (2 * FADE_STEPS)); // Split delayMs between fade in and fade out
+    }
+    
+    // Fade out: gradually decrease brightness (increase PWM value for inverted LED)
+    for (int brightness = MAX_BRIGHTNESS; brightness >= 0; brightness -= (MAX_BRIGHTNESS / FADE_STEPS)) {
+      analogWrite(led, MAX_BRIGHTNESS - brightness); // Invert for LOW=ON logic
+      delay(delayMs / (2 * FADE_STEPS)); // Split delayMs between fade in and fade out
+    }
+    
+    // Brief pause between pulses (except for the last one)
     if (i < times - 1) {
-      delay(delayMs); // Add delay between blinks
+      delay(delayMs / 4); // Quarter of the original delay as pause between pulses
     }
   }
+  
+  // Ensure LED is off after pulsing sequence (HIGH = OFF for inverted logic)
+  analogWrite(led, 255);
 }
 
 // OTA configuration constants - DRY principle
@@ -373,7 +389,7 @@ void initializeOTA() {
     }
     
     // Visual error indication
-    blinkLED(blinkPattern, 300);
+    pulseLED(blinkPattern, 300);
   });
   
   ArduinoOTA.begin();
